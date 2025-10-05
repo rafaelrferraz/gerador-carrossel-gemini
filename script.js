@@ -5,6 +5,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const CLOUDINARY_UPLOAD_PRESET = 'my-carousel-preset';
     const REMOVE_BG_API_KEY = 'H1uRVGozgiKsgwkuPZyiYUi3'; // Substitua pela sua chave da API Remove.bg
 
+
+    // Funções para controlar o modal de loading da IA
+    function showIALoadingModal() {
+        const modal = document.getElementById('iaLoadingModal');
+        if (modal) {
+            modal.classList.add('show');
+            modal.style.display = 'block';
+        }
+    }
+
+    function hideIALoadingModal() {
+        const modal = document.getElementById('iaLoadingModal');
+        if (modal) {
+            modal.classList.remove('show');
+            modal.style.display = 'none';
+        }
+    }
+
+
     // Sistema de debounce para saveState
     let saveTimeout;
     let isLoadingFromHistory = false;
@@ -1166,8 +1185,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // VALIDAÇÃO SEGURA DO FECHAMENTO
-        if (roteiro.fechamento && typeof roteiro.fechamento === 'string' && roteiro.fechamento.trim() !== '') {
+        const isLastSlide = currentSlideIndex === allRoteiros.length - 1;
+        if (isLastSlide && roteiro.fechamento && typeof roteiro.fechamento === 'string' && roteiro.fechamento.trim() !== '') {
             const closingDiv = document.createElement('div');
+            closingDiv.id = `element-${++elementCounter}`;
+
+
             closingDiv.id = `element-${++elementCounter}`;
             closingDiv.className = 'draggable-item is-text';
             closingDiv.setAttribute('contenteditable', 'true');
@@ -1940,11 +1963,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     allRoteiros.unshift(titleSlide);
                     allRoteiros[1].titulo = '';
                 }
-                const lastSlideData = carouselOriginal.slides[carouselOriginal.slides.length - 1];
-                if (lastSlideData && lastSlideData.fechamento && lastSlideData.fechamento.trim() !== '') {
-                    const closingSlide = { ...lastSlideData, titulo: '', corpo: lastSlideData.fechamento };
-                    allRoteiros.push(closingSlide);
-                }
+
             }
         } catch (error) {
             console.error("Erro ao buscar roteiro editado, carregando original.", error);
@@ -2160,32 +2179,85 @@ document.addEventListener('DOMContentLoaded', () => {
         activeElement.focus();
         const selection = window.getSelection();
 
-        // --- AQUI ESTÁ A NOVA LÓGICA ---
-        // Se a seleção estiver "colapsada" (ou seja, nada destacado, só o cursor piscando)
+        // Se não há nada selecionado, aplica ao bloco inteiro
         if (selection.isCollapsed) {
-            // Aplica o estilo ao bloco inteiro, como era antigamente
             setStyle('fontSize', size);
-            // E para a execução da função aqui.
             return;
         }
 
-        // Se algo estiver selecionado, a função continua e executa a lógica
-        // que aplica o estilo apenas na seleção, como fizemos antes.
-        document.execCommand('fontSize', false, '1');
+        // Se há texto selecionado, aplica apenas na seleção
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
 
-        const fontElement = activeElement.querySelector('font[size="1"]');
+            if (activeElement.contains(range.commonAncestorContainer)) {
+                const selectedText = range.toString();
 
-        if (fontElement) {
-            const span = document.createElement('span');
-            span.style.fontSize = size;
-            while (fontElement.firstChild) {
-                span.appendChild(fontElement.firstChild);
+                if (selectedText.trim().length > 0) {
+                    const span = document.createElement('span');
+                    span.style.fontSize = size;
+
+                    try {
+                        range.deleteContents();
+                        span.textContent = selectedText;
+                        range.insertNode(span);
+
+                        const newRange = document.createRange();
+                        newRange.selectNodeContents(span);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+
+                        saveState();
+                        updateToolbarState();
+                    } catch (error) {
+                        console.error('Erro ao aplicar fonte na seleção:', error);
+                    }
+                }
             }
-            fontElement.parentNode.replaceChild(span, fontElement);
+        }
+    }
+
+
+    function applyFontFamilyToSelection(fontFamily) {
+        if (!activeElement || !activeElement.isContentEditable) return;
+
+        activeElement.focus();
+        const selection = window.getSelection();
+
+        // Se não há nada selecionado, aplica ao bloco inteiro
+        if (selection.isCollapsed) {
+            setStyle('fontFamily', fontFamily);
+            return;
         }
 
-        saveState();
-        updateToolbarState();
+        // Se há texto selecionado, aplica apenas na seleção
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+
+            if (activeElement.contains(range.commonAncestorContainer)) {
+                const selectedText = range.toString();
+
+                if (selectedText.trim().length > 0) {
+                    const span = document.createElement('span');
+                    span.style.fontFamily = fontFamily;
+
+                    try {
+                        range.deleteContents();
+                        span.textContent = selectedText;
+                        range.insertNode(span);
+
+                        const newRange = document.createRange();
+                        newRange.selectNodeContents(span);
+                        selection.removeAllRanges();
+                        selection.addRange(newRange);
+
+                        saveState();
+                        updateToolbarState();
+                    } catch (error) {
+                        console.error('Erro ao aplicar família de fonte na seleção:', error);
+                    }
+                }
+            }
+        }
     }
 
     function addNewTextBox() {
@@ -2509,46 +2581,53 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const loadingSpinner = document.getElementById('loadingSpinner');
-                loadingSpinner.classList.remove('hidden');
+                // Desabilita o botão
+                const confirmBtn = document.getElementById('confirmBtn');
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.6';
+                confirmBtn.style.cursor = 'not-allowed';
+
+                // Mostra o modal independente
+                showIALoadingModal();
 
                 try {
                     const response = await fetch(`${API_BASE_URL}?action=generateWithGemini&tema=${encodeURIComponent(tema)}&numSlides=${numSlides}&tom=${encodeURIComponent(tom)}&modelo=${encodeURIComponent(modelo)}`);
                     const data = await response.json();
 
-                    console.log('Resposta da API:', data); // DEBUG
+                    console.log('Resposta da API:', data);
 
                     if (data.status === 'error') {
                         alert('Erro ao gerar roteiro: ' + data.message);
-                        loadingSpinner.classList.add('hidden');
                         return;
                     }
 
                     if (!data.slides || !Array.isArray(data.slides)) {
                         alert('Formato inválido retornado pela IA');
-                        loadingSpinner.classList.add('hidden');
                         return;
                     }
 
-                    // Carregar os slides gerados pela IA
                     allRoteiros = data.slides;
                     currentSlideIndex = 0;
 
                     topBarsWrapper.classList.remove('hidden');
                     mainElement.classList.remove('hidden');
                     introScreen.classList.add('hidden');
-                    loadingSpinner.classList.add('hidden');
 
                     renderSlide();
 
                 } catch (error) {
                     console.error('Erro completo:', error);
                     alert('Erro: ' + error.message);
-                    loadingSpinner.classList.add('hidden');
+                } finally {
+                    // Esconde o modal e reabilita o botão
+                    hideIALoadingModal();
+                    confirmBtn.disabled = false;
+                    confirmBtn.style.opacity = '1';
+                    confirmBtn.style.cursor = 'pointer';
                 }
             }
-
         });
+
 
 
         addSafeListener(themeDropdown, 'change', e => fetchRoteiros(e.target.value, carouselDropdown));
@@ -2590,7 +2669,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addSafeListener(centerAlignBtn, 'click', () => styleAndSave('textAlign', 'center'));
         addSafeListener(rightAlignBtn, 'click', () => styleAndSave('textAlign', 'right'));
         addSafeListener(justifyBtn, 'click', () => styleAndSave('textAlign', 'justify'));
-        addSafeListener(fontFamilySelect, 'change', e => styleAndSave('fontFamily', e.target.value));
+        addSafeListener(fontFamilySelect, 'change', e => applyFontFamilyToSelection(e.target.value));
         addSafeListener(fontSizeSelect, 'change', e => applyFontSizeToSelection(e.target.value + 'px'));
         addSafeListener(lineHeightSelect, 'change', e => styleAndSave('lineHeight', e.target.value));
         addSafeListener(textColorPicker, 'input', e => {
@@ -3031,3 +3110,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 })
+
