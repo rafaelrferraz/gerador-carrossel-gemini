@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Roteiros</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="fonts.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+</head>
+
+<body>
+    <div class="top-bars-wrapper hidden">
+        <header class="main-header-bar">
+            <div class="header-group">
+                <div class="selection-toolbar-group">
+                    <div class="selection-dropdown-pair">
+                        <label for="themeDropdown"></label>
+                        <select id="themeDropdown">
+                            <option value="">Carregando temas...</option>
+                        </select>
+                    </div>
+                    <div class="selection-dropdown-pair">
+                        <select id="carouselDropdown"></select>
+                    </div>
+                </div>
+            </div>
+            <div class="header-group right-aligned">
+                <div class="color-picker-container">
+                    <label for="colorPicker">Fundo:</label>
+                    <input type="color" id="colorPicker" value="#ffffff" title="Cor de Fundo">
+                    <button class="editor-btn color-shortcut" data-color="#F4F4F4" title="Cinza claro"><i
+                            class="fas fa-square-full" style="color: #F4F4F4; border: 1px solid #ccc;"></i></button>
+                    <button class="editor-btn color-shortcut" data-color="#C36640" title="Terracota"><i
+                            class="fas fa-square-full" style="color: #C36640;"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <nav class="editor-toolbar">
+
+            <!-- Grupo 0: Exportar -->
+            <div class="button-group export-controls">
+                <button id="exportPngBtn" class="editor-btn" title="Exportar Slide Atual">
+                    <i class="fas fa-file-arrow-down"></i>
+                </button>
+                <button id="exportAllSlidesBtn" class="editor-btn" title="Exportar Todos os Slides">
+                    <i class="fas fa-file-export"></i>
+                </button>
+            </div>
+
+
+
+            <!-- Grupo 1: Salvar -->
+            <div class="button-group save-group">
+                <button id="saveBtn" class="editor-btn" title="Salvar Roteiro"><i class="fas fa-save"></i></button>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Grupo 2: Formatação básica de texto -->
+            <div class="button-group text-formatting">
+                <button id="boldBtn" class="editor-btn" title="Negrito"><i class="fas fa-bold"></i></button>
+                <button id="italicBtn" class="editor-btn" title="Itálico"><i class="fas fa-italic"></i></button>
+                <button id="underlineBtn" class="editor-btn" title="Sublinhado"><i
+                        class="fas fa-underline"></i></button>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Grupo 3: Alinhamento de texto -->
+            <div class="button-group text-alignment">
+                <button id="leftAlignBtn" class="editor-btn" title="Alinhar à Esquerda"><i
+                        class="fas fa-align-left"></i></button>
+                <button id="centerAlignBtn" class="editor-btn" title="Centralizar"><i
+                        class="fas fa-align-center"></i></button>
+                <button id="rightAlignBtn" class="editor-btn" title="Alinhar à Direita"><i
+                        class="fas fa-align-right"></i></button>
+                <button id="justifyBtn" class="editor-btn" title="Justificar"><i
+                        class="fas fa-align-justify"></i></button>
+            </div>
+
+            <!-- Grupo 4: Espaçamento de linha -->
+            <div class="button-group line-spacing">
+                <select id="lineHeightSelect" class="editor-select">
+                    <option value="1">1</option>
+                    <option value="1.2">1.2</option>
+                    <option value="1.4" selected>1.4</option>
+                    <option value="1.6">1.6</option>
+                    <option value="1.8">1.8</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Grupo 5: Fonte e tamanho -->
+            <div class="button-group font-controls">
+                <select id="fontFamilySelect" class="editor-select">
+                    <option value="">Fonte</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Aguila">Aguila</option>
+                    <option value="Aguila Bold">Aguila Bold</option>
+                    <option value="Aguila Heavy">Aguila Heavy</option>
+                    <option value="Aguila Medium">Aguila Medium</option>
+                    <option value="Aguila Thin">Aguila Thin</option>
+                    <option value="Cinzel">Cinzel</option>
+                </select>
+                <select id="fontSizeSelect" class="editor-select">
+                    <option value="">Tamanho</option>
+                    <option value="12">12</option>
+                    <option value="14">14</option>
+                    <option value="16">16</option>
+                    <option value="18">18</option>
+                    <option value="20">20</option>
+                    <option value="22">22</option>
+                    <option value="24">24</option>
+                    <option value="26">26</option>
+                    <option value="30">30</option>
+                    <option value="36">36</option>
+                    <option value="48">48</option>
+                    <option value="60">60</option>
+                </select>
+            </div>
+
+            <!-- Grupo 6: Cores de texto -->
+            <div class="button-group text-colors">
+                <input type="color" id="textColorPicker" class="editor-color-picker" value="#000000"
+                    title="Cor do Texto">
+                <button class="editor-btn text-color-shortcut" data-color="#F4F4F4" title="Cinza claro"><i
+                        class="fas fa-square-full" style="color: #F4F4F4; border: 1px solid #ccc;"></i></button>
+                <button class="editor-btn text-color-shortcut" data-color="#C36640" title="Terracota"><i
+                        class="fas fa-square-full" style="color: #C36640;"></i></button>
+                <button class="editor-btn text-color-shortcut" data-color="#000000" title="Preto"><i
+                        class="fas fa-square-full" style="color: #000000;"></i></button>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Grupo 7: Controle de camadas (SEMPRE JUNTOS!) -->
+            <div class="button-group layer-controls">
+                <button id="bringToFrontBtn" title="Trazer para Frente" class="editor-btn"><i
+                        class="fas fa-angles-up"></i></button>
+                <button id="sendToBackBtn" title="Enviar para Trás" class="editor-btn"><i
+                        class="fas fa-angles-down"></i></button>
+            </div>
+
+            <!-- Grupo 8: Opacidade -->
+            <div class="button-group opacity-control">
+                <span class="editor-label" title="Opacidade"><i class="fas fa-circle-half-stroke"></i></span>
+                <input type="range" id="opacitySlider" class="editor-slider" min="0" max="1" step="0.1" value="1"
+                    title="Opacidade">
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Grupo 9: Adicionar elementos -->
+            <div class="button-group add-elements">
+                <button type="button" class="editor-btn" id="addTextBtn" title="Adicionar Texto"><i
+                        class="fas fa-font"></i></button>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+                <div class="upload-dropdown-container">
+                    <button type="button" class="editor-btn" id="uploadBtn" title="Adicionar Imagem">
+                        <i class="fas fa-image"></i>
+                    </button>
+                    <div class="upload-options">
+                        <button type="button" class="editor-btn upload-option-btn" id="uploadLocalBtn"
+                            title="Computador">
+                            <i class="fas fa-folder"></i>
+                        </button>
+                        <button type="button" class="editor-btn upload-option-btn" id="uploadCloudBtn" title="Nuvem">
+                            <i class="fas fa-cloud"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grupo 10: Ferramentas de imagem -->
+            <div class="button-group image-tools">
+                <button type="button" id="removeBgBtn" class="editor-btn" title="Remover fundo da imagem selecionada"><i
+                        class="fas fa-cut"></i></button>
+                <button id="deleteBtn" class="editor-btn" title="Excluir Elemento" disabled><i
+                        class="fas fa-trash-alt"></i></button>
+            </div>
+
+            <div class="separator"></div>
+
+            <!-- Grupo 11: Visualização -->
+            <div class="button-group view-controls">
+                <button id="resetZoomBtn" class="editor-btn" title="Resetar Zoom"><i class="fas fa-expand"></i></button>
+            </div>
+
+            <!-- Grupo 12: Gerenciar slides (SEMPRE JUNTOS!) -->
+            <div class="button-group slide-controls">
+                <button type="button" class="editor-btn" id="addSlideBtn" title="Adicionar Novo Slide"><i
+                        class="fas fa-plus"></i></button>
+                <button type="button" class="editor-btn" id="removeSlideBtn" title="Remover Slide Atual"><i
+                        class="fas fa-minus"></i></button>
+            </div>
+
+        </nav>
+
+    </div>
+
+    <div id="intro-screen">
+        <h2>Gerador de carrosséis</h2>
+
+        <!-- NOVO: Escolha do modo -->
+        <div class="mode-selection">
+            <button class="mode-btn active" data-mode="planilha">
+                <i class="fas fa-table"></i>
+                <span>Importar da Planilha</span>
+            </button>
+            <button class="mode-btn" data-mode="ia">
+                <i class="fas fa-sparkles"></i>
+                <span>Gerar com IA (beta)</span>
+            </button>
+        </div>
+
+        <!-- Modo Planilha (já existente) -->
+        <div id="planilha-mode" class="mode-content active">
+            <div class="selection-group">
+                <select id="introThemeDropdown">
+                    <option value="">Selecione um tema...</option>
+                </select>
+            </div>
+            <div class="selection-group" id="introCarouselContainer">
+                <select id="introCarouselDropdown" disabled>
+                    <option value="">Selecione um Roteiro</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- NOVO: Modo IA -->
+        <div id="ia-mode" class="mode-content">
+            <div class="selection-group">
+                <input type="text" id="iaThemeInput"
+                    placeholder="Digite o assunto do carrossel (ex: incontinência urinária)">
+            </div>
+            <div class="selection-group">
+                <label for="iaNumSlides">Número de slides:</label>
+                <input type="number" id="iaNumSlides" min="3" max="10" value="5">
+            </div>
+            <div class="selection-group">
+                <label for="iaTom">Tom:</label>
+                <select id="iaTom">
+                    <option value="educativo">Educativo</option>
+                    <option value="informal">Informal</option>
+                    <option value="profissional">Profissional</option>
+                </select>
+            </div>
+            <div class="selection-group">
+                <label for="iaModelo">Modelo:</label>
+                <select id="iaModelo">
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                </select>
+            </div>
+
+        </div>
+
+        <button id="confirmBtn" class="hidden">Confirmar</button>
+    </div>
+
+    <main class="hidden">
+        <div class="carousel-content">
+            <div id="loadingSpinner" class="loading-spinner hidden">
+                <i class="fas fa-spinner fa-spin"></i>
+            </div>
+            <div class="slide-wrapper">
+                <div id="zoom-pan-container">
+                    <div id="slideContainer">
+                        <div class="snap-line-v" id="snap-v-25"></div>
+                        <div class="snap-line-v" id="snap-v-50"></div>
+                        <div class="snap-line-v" id="snap-v-75"></div>
+                        <div class="snap-line-h" id="snap-h-25"></div>
+                        <div class="snap-line-h" id="snap-h-50"></div>
+                        <div class="snap-line-h" id="snap-h-75"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="carousel-buttons">
+                <button id="prevBtn" class="nav-btn" disabled>Anterior</button>
+                <span id="slideCounter"></span>
+                <button id="nextBtn" class="nav-btn" disabled>Próximo</button>
+            </div>
+    </main>
+
+    <!-- Modal da Galeria do Cloudinary -->
+
+
+
+    <footer>
+        <p>Para Larissa, com amor ❤️</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+
+</html>
