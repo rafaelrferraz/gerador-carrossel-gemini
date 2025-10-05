@@ -706,3 +706,137 @@ footer {
 #ia-mode .selection-group:first-child {
     display: block;
 }
+
+#loadingSpinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+#loadingSpinner.hidden {
+    display: none !important;
+}
+
+#loadingSpinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    transition: opacity 0.3s ease;
+}
+
+#loadingSpinner.hidden {
+    display: none !important;
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Modal de Carregamento IA - Independente */
+#iaLoadingModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999999;
+    display: none;
+}
+
+#iaLoadingModal.show {
+    display: block !important;
+}
+
+.ia-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.ia-loading-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 50px 70px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    text-align: center;
+    min-width: 350px;
+    animation: iaModalFadeIn 0.3s ease;
+}
+
+.ia-spinner {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 25px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #C36640;
+    border-radius: 50%;
+    animation: iaSpinAnimation 1s linear infinite;
+}
+
+.ia-loading-title {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 26px;
+    font-weight: 600;
+}
+
+.ia-loading-text {
+    margin: 0;
+    color: #666;
+    font-size: 16px;
+    font-weight: 400;
+}
+
+@keyframes iaModalFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -45%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes iaSpinAnimation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
